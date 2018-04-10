@@ -1,0 +1,6 @@
+node_modules/
+.yarnclean
+*.log
+dist/*
+!dist/.gitkeep
+.idea/

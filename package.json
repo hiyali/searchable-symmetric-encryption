@@ -1,0 +1,38 @@
+{
+  "name": "eight-hundred",
+  "version": "1.0.0",
+  "description": "For eight hundred RMB to do a project",
+  "main": "index.js",
+  "scripts": {
+    "build": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "hash",
+    "aes",
+    "ascii",
+    "string"
+  ],
+  "author": "Salam Hiyali",
+  "license": "MIT",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "dependencies": {
+    "aes-js": "^3.1.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.2.1",
+    "babel-plugin-syntax-async-functions": "^6.13.0",
+    "babel-preset-env": "^1.6.1",
+    "eslint": "^4.17.0",
+    "node-color-log": "^2.0.0",
+    "randomatic": "^3.0.0",
+    "spritzjs": "^1.4.18",
+    "yargs": "^11.0.0"
+  }
+}
