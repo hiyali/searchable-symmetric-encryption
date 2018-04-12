@@ -74,8 +74,8 @@ Log('K1', K1)
 /*
  * 7. 用 stream-cipher & hash 函数生成：Si
  */
-const M = [65, 66, 67, 68, 69] // 模：ABCDE 的charCode
-const Si = sprit.hash(M, KEY_LENGTH) // => 16 位哈希
+const Seeds = [65, 66, 67, 68, 69] // 模：ABCDE 的charCode
+const Si = sprit.hash(Seeds, KEY_LENGTH) // => 16 位哈希
 Log('Si', Si)
 
 /*
