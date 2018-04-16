@@ -1,5 +1,6 @@
 import aesjs from 'aes-js'
 import spritzjs from 'spritzjs'
+import { Crypto } from 'ezcrypto'
 import randomize from 'randomatic'
 import { argv } from 'yargs'
 
@@ -18,7 +19,6 @@ Log('SSE实践开始 ...', '', {
 const K2_str = randomize('Aa0!', KEY_LENGTH) // ex: => 'LV3u~BSGhw'
 Log('K2_str', K2_str)
 const K2 = aesjs.utils.utf8.toBytes(K2_str)
-Log('K2', K2)
 
 /*
  * 2. 生成：分组加密所需的向量 IV (initialization vector)
@@ -32,16 +32,9 @@ const IV = aesjs.utils.utf8.toBytes(IV_str)
 /*
  * 3. 接收输入的文字或生成：纯字符串 Wi
  */
-let inputText = argv.text // 输入的文字
-Log('inputText', inputText)
-if (typeof inputText === 'string') {
-  inputText = inputText.substr(0, KEY_LENGTH) // 截取输入的文字的 前 16 位
-  inputText = inputText.padEnd(KEY_LENGTH, '0') // 用字符0填充不到 16 位的字符串
-}
-const Wi_str = inputText || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
-Log('Wi_str', Wi_str)
+const Wi_str = randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
 const Wi = aesjs.utils.utf8.toBytes(Wi_str)
-Log('Wi', Wi)
+Log('Wi_str', Wi_str)
 
 /*
  * 4. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
@@ -60,8 +53,6 @@ const Li = aesjs.utils.utf8.toBytes(Li_str)
 const Ri_str = X.substr(halfLength, X.length)
 const Ri = aesjs.utils.utf8.toBytes(Ri_str)
 Log('Li_str / Ri_str', Li_str + '/' + Ri_str)
-Log('Li', Li)
-Log('Ri', Ri)
 
 /*
  * 6. 生成：密钥 K'
@@ -72,11 +63,13 @@ const K1 = aesjs.utils.utf8.toBytes(K1_str)
 Log('K1', K1)
 
 /*
- * 7. 用 stream-cipher & hash 函数生成：Si
+ * 7. 用 Modified Allegedly RC4 / K1 来加密得到：Si
  */
-const Seeds = [65, 66, 67, 68, 69] // 模：ABCDE 的charCode
-const Si = sprit.hash(Seeds, KEY_LENGTH) // => 16 位哈希
-Log('Si', Si)
+const Seeds = [65, 66, 67, 68, 69] // 'ABCDE' 的16进制列表
+const Seeds_hash = sprit.hash(Seeds, KEY_LENGTH)
+const Si_str = Crypto.MARC4.encrypt(Seeds_hash, K1_str) // 字符串形式输入
+const Si = aesjs.utils.utf8.toBytes(Si_str)
+Log('Si_str', Si_str)
 
 /*
  * 8. 用 stream-cipher 流加密 来解密 Li 得到：Ki
@@ -85,9 +78,9 @@ const Ki = sprit.decrypt(K1, Li)
 Log('Ki', Ki)
 
 /*
- * 9. 用 stream-cipher 流加密/Ki 来加密 Si：FKi(Si)
+ * 9. 用 HMAC-MD5 (Keyed-hash message authentication codes) /Ki 来加密：Si
  */
-const FKiSi = sprit.encrypt(Ki, Si)
+const FKiSi = Crypto.HMAC(Crypto.MD5, Si, Ki, { asBytes: true })
 Log('FKiSi', FKiSi)
 
 /*
@@ -95,3 +88,18 @@ Log('FKiSi', FKiSi)
  */
 const Ci = HEX_ARR_XOR(Ri, FKiSi)
 Log('Ci', Ci)
+
+
+/*
+ *
+ * 后期用来传参
+ *
+ *
+let inputText = argv.text // 输入的文字
+Log('inputText', inputText)
+if (typeof inputText === 'string') {
+  inputText = inputText.substr(0, KEY_LENGTH) // 截取输入的文字的 前 16 位
+  inputText = inputText.padEnd(KEY_LENGTH, '0') // 用字符0填充不到 16 位的字符串
+}
+// */
+

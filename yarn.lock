@@ -1110,6 +1110,10 @@ extsprintf@1.3.0, extsprintf@^1.2.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.3.0.tgz#96918440e3041a7a414f8c52e3c574eb3c3e1e05"
 
+ezcrypto@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/ezcrypto/-/ezcrypto-0.0.3.tgz#fd29cfb3a6cd8738f60a77f12c26aa4ff3c1f85e"
+
 fast-deep-equal@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fast-deep-equal/-/fast-deep-equal-1.0.0.tgz#96256a3bc975595eb36d82e9929d060d893439ff"
