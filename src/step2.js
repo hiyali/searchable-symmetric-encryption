@@ -9,7 +9,7 @@ import { HEX_ARR_XOR } from './utils.js'
 import { KEY_LENGTH } from './constants.js'
 
 const sprit = spritzjs()
-Log('SSE实践开始 ...', '', {
+Log('SSE实践 ... 第二步', '', {
   titleColor: 'cyan'
 })
 
@@ -30,29 +30,29 @@ const IV_str = randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
 const IV = aesjs.utils.utf8.toBytes(IV_str)
 
 /*
- * 3. 接收输入的文字或生成：纯字符串 Wi
+ * 3. 接收输入的文字或生成：纯字符串 W
  */
-const Wi_str = randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
-const Wi = aesjs.utils.utf8.toBytes(Wi_str)
-Log('Wi_str', Wi_str)
+const W_str = randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
+const W = aesjs.utils.utf8.toBytes(W_str)
+Log('W_str', W_str)
 
 /*
  * 4. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
  */
 const aesCbc = new aesjs.ModeOfOperation.cbc(K2, IV)
-const encryptedBytes = aesCbc.encrypt(Wi)
+const encryptedBytes = aesCbc.encrypt(W)
 const X = aesjs.utils.hex.fromBytes(encryptedBytes) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
 Log('X', X)
 
 /*
- * 5. X 一分为二，得到：Li , Ri
+ * 5. X 一分为二，得到：L , R
  */
 const halfLength = Math.round(X.length / 2) // X 的一半（四舍五入）
-const Li_str = X.substr(0, halfLength)
-const Li = aesjs.utils.utf8.toBytes(Li_str)
-const Ri_str = X.substr(halfLength, X.length)
-const Ri = aesjs.utils.utf8.toBytes(Ri_str)
-Log('Li_str / Ri_str', Li_str + '/' + Ri_str)
+const L_str = X.substr(0, halfLength)
+const L = aesjs.utils.utf8.toBytes(L_str)
+const R_str = X.substr(halfLength, X.length)
+const R = aesjs.utils.utf8.toBytes(R_str)
+Log('L_str / R_str', L_str + '/' + R_str)
 
 /*
  * 6. 生成：密钥 K'
@@ -63,43 +63,16 @@ const K1 = aesjs.utils.utf8.toBytes(K1_str)
 Log('K1', K1)
 
 /*
- * 7. 用 Modified Allegedly RC4 / K1 来加密得到：Si
+ * 7. 用 stream-cipher 流加密 来解密 L/K1 得到：K
  */
 const Seeds = [65, 66, 67, 68, 69] // 'ABCDE' 的16进制列表
 const Seeds_hash = sprit.hash(Seeds, KEY_LENGTH)
-const Si_str = Crypto.MARC4.encrypt(Seeds_hash, K1_str) // 字符串形式输入
-const Si = aesjs.utils.utf8.toBytes(Si_str)
-Log('Si_str', Si_str)
+const K = sprit.decrypt(K1, L)
+const K_str = aesjs.utils.utf8.fromBytes(K)
+Log('K', K)
 
 /*
- * 8. 用 stream-cipher 流加密 来解密 Li 得到：Ki
+ * 8. <X, k>
  */
-const Ki = sprit.decrypt(K1, Li)
-Log('Ki', Ki)
-
-/*
- * 9. 用 HMAC-MD5 (Keyed-hash message authentication codes) /Ki 来加密：Si
- */
-const FKiSi = Crypto.HMAC(Crypto.MD5, Si, Ki, { asBytes: true })
-Log('FKiSi', FKiSi)
-
-/*
- * 10. 模2加法（异或运算）Ri 与 FKiSi 得到：Ci
- */
-const Ci = HEX_ARR_XOR(Ri, FKiSi)
-Log('Ci', Ci)
-
-
-/*
- *
- * 后期用来传参
- *
- *
-let inputText = argv.text // 输入的文字
-Log('inputText', inputText)
-if (typeof inputText === 'string') {
-  inputText = inputText.substr(0, KEY_LENGTH) // 截取输入的文字的 前 16 位
-  inputText = inputText.padEnd(KEY_LENGTH, '0') // 用字符0填充不到 16 位的字符串
-}
-// */
-
+const XK_list = [X, K_str]
+Log('<X, K_str> XK_list', XK_list)
