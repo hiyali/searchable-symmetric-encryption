@@ -6,7 +6,7 @@ const STR_HEX_XOR = (a, b) => {
   let i = a.length
   let j = b.length
 
-  while (i-- > 0 && j-- > 0) {
+  while (i-- >= 0 && j-- >= 0) {
     res = (parseInt(a.charAt(i), 16) ^ parseInt(b.charAt(j), 16)).toString(16) + res
   }
   return res
@@ -17,7 +17,7 @@ const HEX_ARR_XOR = (a, b) => {
   let i = a.length
   let j = b.length
 
-  while (i-- > 0 && j-- > 0) {
+  while (i-- >= 0 && j-- >= 0) {
     res = (a[i] ^ b[j]).toString(16) + res
   }
   return res
