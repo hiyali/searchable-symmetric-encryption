@@ -1,13 +1,14 @@
 import aesjs from 'aes-js'
-import bcrypt from 'bcryptjs'
 import CryptoJS from 'crypto-js'
 import randomize from 'randomatic'
 import spritzjs from 'spritzjs'
+import bitwise from 'bitwise'
+
+import bcrypt from 'bcryptjs'
 import { argv } from 'yargs'
 
 import Log from './log.js'
-import { HEX_ARR_XOR, STR_HEX_XOR } from './utils.js'
-import { KEY_LENGTH } from './constants.js'
+import { CONSTANT_N, CONSTANT_M, KEY_LENGTH } from './constants.js'
 
 const spritz = spritzjs()
 
@@ -29,7 +30,7 @@ let XK_list
    * 1. 生成：密钥 K"
    */
   const K2_str = randomize('Aa0!', KEY_LENGTH)
-  Log('K2_str', K2_str)
+  Log('K2', K2_str)
   K2 = aesjs.utils.utf8.toBytes(K2_str)
 
   /*
@@ -45,23 +46,22 @@ let XK_list
    * 3. 接收输入的文字或生成：纯字符串 Wi
    */
   const Wi_str = 'constant-string1' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
-  Log('Wi_str', Wi_str)
+  Log('Wi', Wi_str)
   const Wi = aesjs.utils.utf8.toBytes(Wi_str)
 
   /*
    * 4. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
    */
   aesCbc = new aesjs.ModeOfOperation.cbc(K2, IV)
-  const X = aesCbc.encrypt(Wi)
-  const X_hex = aesjs.utils.hex.fromBytes(X) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
-  Log('X_hex', X_hex)
+  const X_bytes = aesCbc.encrypt(Wi)
+  const X = aesjs.utils.hex.fromBytes(X_bytes) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
+  Log('X', X)
 
   /*
    * 5. X 一分为二，得到：Li , Ri
    */
-  const halfLength = Math.round(X_hex.length / 2) // X 的一半（四舍五入）
-  const Li = X_hex.slice(0, halfLength)
-  const Ri = X_hex.slice(halfLength, X_hex.length)
+  const Li = X.slice(0, (CONSTANT_N - CONSTANT_M) * 2)
+  const Ri = X.slice((CONSTANT_N - CONSTANT_M) * 2, CONSTANT_N * 2)
   Log('Li / Ri', Li + '/' + Ri)
 
   /*
@@ -76,27 +76,38 @@ let XK_list
   const Seeds_str = 'seeds' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
   const Seeds = aesjs.utils.utf8.toBytes(Seeds_str)
 
-  const Si_bytes = spritz.hash(Seeds, KEY_LENGTH)
+  const Si_bytes = spritz.hash(Seeds, CONSTANT_N - CONSTANT_M)
   const Si = aesjs.utils.hex.fromBytes(Si_bytes)
   Log('Si', Si)
 
   /*
-   * 8. 用 MD5 / K1 来加密得到：Ki
+   * 8. 用 SHA1 / K1 来加密得到：Ki
    */
-  const Ki = CryptoJS.HmacMD5(Li, K1)
+  const Ki = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA1(Li, K1))
+  // const Ki = CryptoJS.PBKDF2(Li, K1, { keySize: 128 / 32 })
   Log('Ki', Ki)
+  // console.log(Ki)
 
   /*
    * 9. 用 MD5 /Ki 来加密：Si
    */
-  const FKiSi_str = CryptoJS.HmacMD5(Si, Ki)
-  Log('FKiSi_str', FKiSi_str)
-  const FKiSi = aesjs.utils.utf8.toBytes(FKiSi_str)
+  const FKiSi = CryptoJS.enc.Hex.stringify(CryptoJS.HmacMD5(Si, Ki))
+  Log('FKiSi', FKiSi)
 
   /*
-   * 10. 模2加法（异或运算）X 与 FKiSi 得到：Ci
+   * 10. 模2加法（异或运算）X 与 <Si, FKiSi> 得到：Ci
    */
-  Ci = HEX_ARR_XOR(X, Si_bytes.concat(FKiSi))
+  const FKiSi_buffer = Buffer.from(FKiSi, 'hex')
+  const FKiSi_bits = bitwise.buffer.read(FKiSi_buffer)
+  const X_buffer = Buffer.from(X, 'hex')
+  const X_bits = bitwise.buffer.read(X_buffer)
+  const Ci_bits = bitwise.bits.xor(X_bits, FKiSi_bits)
+  const Ci_bytes = []
+  for (let i = 0; i < Ci_bits.length; i += 8) {
+    const byte = bitwise.byte.write(Ci_bits.slice(i, i + 8))
+    Ci_bytes.push(byte)
+  }
+  Ci = aesjs.utils.hex.fromBytes(Ci_bytes)
   Log('Ci', Ci)
 
 
@@ -125,35 +136,36 @@ let XK_list
    * 1. 接收输入的文字或生成：纯字符串 W
    */
   const W_str = 'constant-string1' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
-  Log('W_str', W_str)
+  Log('W', W_str)
   const W = aesjs.utils.utf8.toBytes(W_str)
 
   /*
    * 2. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
    */
-  const X = aesCbc.encrypt(W) // from K2
-  const X_hex = aesjs.utils.hex.fromBytes(X) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
-  Log('X_hex', X_hex)
+  const X_bytes = aesCbc.encrypt(W) // from K2
+  const X = aesjs.utils.hex.fromBytes(X_bytes) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
+  Log('X', X)
 
   /*
    * 3. X 一分为二，得到：L , R
    */
-  const halfLength = Math.round(X_hex.length / 2) // X 的一半（四舍五入）
-  const L = X_hex.substr(0, halfLength)
-  const R = X_hex.substr(halfLength, X_hex.length)
+  const L = X.substr(0, (CONSTANT_N - CONSTANT_M) * 2)
+  const R = X.substr((CONSTANT_N - CONSTANT_M) * 2, CONSTANT_N * 2)
   Log('L / R', L + '/' + R)
 
   /*
-   * 4. 用 MD5 来加密 L/K1 得到：K
+   * 4. 用 SHA1 来加密 L/K1 得到：K
    */
-  const K = CryptoJS.HmacMD5(L, K1)
+  const K = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA1(L, K1))
+  // const K = CryptoJS.PBKDF2(L, K1, { keySize: 128 / 32 })
   Log('K', K)
+  // console.log(K)
 
   /*
    * 5. <X, k>
    */
-  XK_list = [X_hex, K]
-  Log('<X, K> XK_list', XK_list)
+  XK_list = [X, K]
+  Log('<X, K>', XK_list)
 })()
 
 
@@ -166,17 +178,27 @@ let XK_list
   /*
    * 1. 取出 X, K 两个参数
    */
-  const X_hex = XK_list[0]
-  Log('X_hex', X_hex)
+  const X = XK_list[0]
+  Log('X', X)
   const K = XK_list[1]
   Log('K', K)
-  const X = aesjs.utils.hex.toBytes(X_hex)
 
   /*
-   * 2. Ci 与 X 做模二运算 XOR: Si
+   * 2. 在 Ci 与 X 的比特流上做模二加法运算 XOR: Si
    */
-  const Ci_bytes = aesjs.utils.hex.toBytes(Ci)
-  const Si = HEX_ARR_XOR(Ci_bytes, X)
+  const X_buffer = Buffer.from(X, 'hex')
+  const X_bits = bitwise.buffer.read(X_buffer)
+
+  const Ci_buffer = Buffer.from(Ci, 'hex')
+  const Ci_bits = bitwise.buffer.read(Ci_buffer)
+
+  const Si_bits = bitwise.bits.xor(Ci_bits, X_bits)
+  const Si_bytes = []
+  for (let i = 0; i < Si_bits.length; i += 8) {
+    const byte = bitwise.byte.write(Si_bits.slice(i, i + 8))
+    Si_bytes.push(byte)
+  }
+  const Si = aesjs.utils.hex.fromBytes(Si_bytes)
   Log('Si', Si)
 
   /*
@@ -190,7 +212,7 @@ let XK_list
 
 /*
 ;(async () => {
-  Log('\nSSE实践 ... 重新来', '', {
+  Log('\nSSE实践 ... 解密实验', '', {
     titleColor: 'cyan'
   })
 
