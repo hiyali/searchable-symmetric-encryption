@@ -27,14 +27,14 @@ let XK_list
   })
 
   /*
-   * 1. 生成：密钥 K"
+   * 1. 随机生成：密钥 K"
    */
   const K2_str = randomize('Aa0!', KEY_LENGTH)
   Log('K2', K2_str)
   K2 = aesjs.utils.utf8.toBytes(K2_str)
 
   /*
-   * 2. 生成：分组加密所需的向量 IV (initialization vector)
+   * 2. 随机生成：分组加密所需的向量 IV (initialization vector)
    * 解释：
    * 需协商一个初始化向量（IV），这个IV没有实际意义，只是在第一次计算的时候需要用到而已。
    * 采用这种模式的话安全性会有所提高。
@@ -43,14 +43,14 @@ let XK_list
   IV = aesjs.utils.utf8.toBytes(IV_str)
 
   /*
-   * 3. 接收输入的文字或生成：纯字符串 Wi
+   * 3. 不变：纯字符串 Wi
    */
   const Wi_str = 'constant-string1' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
   Log('Wi', Wi_str)
   const Wi = aesjs.utils.utf8.toBytes(Wi_str)
 
   /*
-   * 4. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
+   * 4. CBC - Cipher-Block Chaining 分组密码 （同：块加密） Wi 得到: X
    */
   aesCbc = new aesjs.ModeOfOperation.cbc(K2, IV)
   const X_bytes = aesCbc.encrypt(Wi)
@@ -65,13 +65,13 @@ let XK_list
   Log('Li / Ri', Li + '/' + Ri)
 
   /*
-   * 6. 生成：密钥 K'
+   * 6. 随机生成：密钥 K'
    */
   K1 = randomize('Aa0!', KEY_LENGTH)
   Log('K1', K1)
 
   /*
-   * 7. Stream-Cipher RC4-like hash：Si
+   * 7. 自定义 Seeds，并用 Stream-Cipher RC4-like hash 得到：Si
    */
   const Seeds_str = 'seeds' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
   const Seeds = aesjs.utils.utf8.toBytes(Seeds_str)
@@ -81,7 +81,7 @@ let XK_list
   Log('Si', Si)
 
   /*
-   * 8. 用 SHA1 / K1 来加密得到：Ki
+   * 8. 用 SHA1 / K1 加密 Li 得到：Ki
    */
   const Ki = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA1(Li, K1))
   // const Ki = CryptoJS.PBKDF2(Li, K1, { keySize: 128 / 32 })
@@ -89,7 +89,7 @@ let XK_list
   // console.log(Ki)
 
   /*
-   * 9. 用 MD5 /Ki 来加密：Si
+   * 9. 用 MD5 / Ki 加密 Si 得到：FKiSi
    */
   const FKiSi = CryptoJS.enc.Hex.stringify(CryptoJS.HmacMD5(Si, Ki))
   Log('FKiSi', FKiSi)
@@ -133,14 +133,14 @@ let XK_list
   })
 
   /*
-   * 1. 接收输入的文字或生成：纯字符串 W
+   * 1. 不变：纯字符串 W
    */
   const W_str = 'constant-string1' || randomize('Aa0!', KEY_LENGTH) // must be 16 Bytes
   Log('W', W_str)
   const W = aesjs.utils.utf8.toBytes(W_str)
 
   /*
-   * 2. CBC - Cipher-Block Chaining 分组密码 （同：块加密）
+   * 2. 用 CBC - Cipher-Block Chaining 分组密码 （同：块加密）对 W 加密得到：X
    */
   const X_bytes = aesCbc.encrypt(W) // from K2
   const X = aesjs.utils.hex.fromBytes(X_bytes) // 打印或者存储以上加密的分组流之前，需要转换成 16 进制
@@ -154,7 +154,7 @@ let XK_list
   Log('L / R', L + '/' + R)
 
   /*
-   * 4. 用 SHA1 来加密 L/K1 得到：K
+   * 4. 用 SHA1 / K1 来加密 L 得到：K
    */
   const K = CryptoJS.enc.Hex.stringify(CryptoJS.HmacSHA1(L, K1))
   // const K = CryptoJS.PBKDF2(L, K1, { keySize: 128 / 32 })
@@ -162,7 +162,7 @@ let XK_list
   // console.log(K)
 
   /*
-   * 5. <X, k>
+   * 5. 组装发送云端的数据: <X, k>
    */
   XK_list = [X, K]
   Log('<X, K>', XK_list)
@@ -176,7 +176,7 @@ let XK_list
   })
 
   /*
-   * 1. 取出 X, K 两个参数
+   * 1. 在云端接收 X, K 两个参数
    */
   const X = XK_list[0]
   Log('X', X)
@@ -184,7 +184,7 @@ let XK_list
   Log('K', K)
 
   /*
-   * 2. 在 Ci 与 X 的比特流上做模二加法运算 XOR: Si
+   * 2. 在 Ci 与 X 的比特流上做模二加法运算 XOR 得到: Si
    */
   const X_buffer = Buffer.from(X, 'hex')
   const X_bits = bitwise.buffer.read(X_buffer)
@@ -202,7 +202,7 @@ let XK_list
   Log('Si', Si)
 
   /*
-   * 3. 用 MD5 /K 来加密：Si
+   * 3. 用 MD5 / K 来得到：Fi
    */
   const Fi = CryptoJS.HmacMD5(Si, K)
   Log('Fi', Fi)
