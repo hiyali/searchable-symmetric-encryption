@@ -1,0 +1,33 @@
+{
+  "name": "sjcl-searchable",
+  "version": "1.0.0",
+  "description": "SJCL:  Searchable Encryption ============================",
+  "main": "searchable.js",
+  "directories": {
+    "example": "example"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "caesar": "^1.1.12",
+    "consolidate": "^0.15.1",
+    "coffeescript": "^2.2.4",
+    "express": "^4.16.3",
+    "handlebars": "^4.0.11",
+    "morgan": "^1.9.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "dev": "./node_modules/coffeescript/bin/coffee example/app.coffee",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiyali/searchable-symmetric-encryption.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hiyali/searchable-symmetric-encryption/issues"
+  },
+  "homepage": "https://github.com/hiyali/searchable-symmetric-encryption#readme"
+}

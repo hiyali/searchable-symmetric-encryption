@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <script type="text/javascript" src="./example/coffee-script.js"></script>
+    <script type="text/javascript" src="http://www.w3school.com.cn/jquery/jquery.js"></script>
+    <script type="text/javascript" src="./example/amplify.min.js"></script>
+    <script type="text/javascript" src="./example/sjcl.js"></script>
+    <script type="text/coffeescript" src="./searchable.coffee"></script>
+    <script type="text/coffeescript">
+      # Generate a random password if there isn't one.
+      pass = amplify.store 'pass'
+      if not pass?
+        pass = sjcl.codec.base64.fromBits sjcl.random.randomWords 8, 0
+        amplify.store 'pass', pass
+
+      # Decrypt the keystore.
+      keystore = unescape '{{{keystore}}}'
+      if keystore is '' then keystore = {}
+      else keystore = JSON.parse sjcl.decrypt pass, keystore
+
+      # Decrypt all of the encrypted segments.  (Any selector will do.)
+      for entrySpan in document.getElementsByClassName 'entry'
+        entrySpan.innerHTML = sjcl.decrypt pass, entrySpan.innerHTML
+
+      # Mask a form.
+      window.mask = (form) ->
+        # Setup search.
+        max = form.entry.value.length
+        tokens = sjcl.searchable.tokenize form.entry.value
+        out = sjcl.searchable.secureIndex keystore, max, tokens
+
+        form.id.value = out.newId
+        form.domain.value = out.newDomain
+        form.replaces.value = JSON.stringify []
+        form.keystore.value = sjcl.encrypt pass, JSON.stringify keystore
+        form.index.value = JSON.stringify out.index
+
+        # Encrypt entry.
+        form.entry.value = sjcl.encrypt pass, form.entry.value
+
+        true
+
+      # Encrypt a query form.
+      window.query = (form) ->
+        query = sjcl.searchable.tokenize form.query.value
+        query = sjcl.searchable.createQuery keystore, query...
+
+        form.query.value = JSON.stringify query
+
+        true
+      </script>
+  </head>
+  <body>
+    <b>Entries:</b><br />
+
+    {{#each entries}}<span class="entry">{{this}}</span><br />{{/each}}
+    {{#each entries}}<span class="encrypted-entry">{{this}}</span><br />{{/each}}
+
+    <hr />
+
+    <b>Add Entry:</b>
+    <form method="post" action="/post" onsubmit="return window.mask(this);">
+      <input type="text" name="entry" placeholder="Entry" />&nbsp;
+      <input type="hidden" name="id" />
+      <input type="hidden" name="domain" />
+      <input type="hidden" name="replaces" />
+      <input type="hidden" name="keystore" />
+      <input type="hidden" name="index" />
+      <input type="submit" value="Post" />
+    </form>
+
+    <hr />
+
+    <b> Search Entries:</b>
+    <form method="post" action="/search" onsubmit="return window.query(this);">
+      <input type="text" name="query" placeholder="Query" />&nbsp;
+      <input type="submit" value="Search" />&nbsp;
+      <a href="/">(View All)</a>
+    </form>
+  </body>
+</html>
