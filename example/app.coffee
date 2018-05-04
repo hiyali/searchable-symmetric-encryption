@@ -35,15 +35,15 @@ app.post '/post', (req, res) ->
     if (entry? and not id?) or not keystore? or not index?
         return res.send 'Missing data!'
 
-    if entry? and typeof id isnt 'string' then return res.send 'Bad data id!'
-    if entry? and typeof entry isnt 'string' then return res.send 'Bad data entry!'
-    if typeof keystore isnt 'string' then return res.send 'Bad data keystore!'
-    if exports.entries[id]? then return res.send 'Bad data entries[id]!'
+    if entry? and typeof id isnt 'string' then return res.send '数据不对： id!'
+    if entry? and typeof entry isnt 'string' then return res.send '数据不对： entry!'
+    if typeof keystore isnt 'string' then return res.send '数据不对： keystore!'
+    if exports.entries[id]? then return res.send '数据不对： entries[id]!'
 
     try
         index = JSON.parse index
         replaces = JSON.parse replaces
-    catch e then return res.send 'Bad data index or replaces!'
+    catch e then return res.send '数据不对： index or replaces!'
 
     # Attempt to merge the index.
     out = exports.server.update domain, index, replaces
@@ -75,7 +75,7 @@ app.post '/search', (req, res) ->
         return res.send 'Missing data!'
 
     try queries = JSON.parse queries
-    catch e then return res.send 'Bad data queries!'
+    catch e then return res.send '数据不对： queries!'
 
     # Run query.
     results = []

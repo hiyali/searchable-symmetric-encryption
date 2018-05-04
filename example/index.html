@@ -1,5 +1,6 @@
 <html>
   <head>
+    <title>SSE 实践</title>
     <script type="text/javascript" src="./example/coffee-script.js"></script>
     <script type="text/javascript" src="http://www.w3school.com.cn/jquery/jquery.js"></script>
     <script type="text/javascript" src="./example/amplify.min.js"></script>
@@ -50,31 +51,33 @@
       </script>
   </head>
   <body>
-    <b>Entries:</b><br />
+    <b> 内容：</b><br />
 
+    <p>本地：</p>
     {{#each entries}}<span class="entry">{{this}}</span><br />{{/each}}
+    <p>云端：</p>
     {{#each entries}}<span class="encrypted-entry">{{this}}</span><br />{{/each}}
 
     <hr />
 
-    <b>Add Entry:</b>
+    <b> 添加：</b>
     <form method="post" action="/post" onsubmit="return window.mask(this);">
-      <input type="text" name="entry" placeholder="Entry" />&nbsp;
+      <input type="text" name="entry" placeholder="文本" />&nbsp;
       <input type="hidden" name="id" />
       <input type="hidden" name="domain" />
       <input type="hidden" name="replaces" />
       <input type="hidden" name="keystore" />
       <input type="hidden" name="index" />
-      <input type="submit" value="Post" />
+      <input type="submit" value="提交" />
     </form>
 
     <hr />
 
-    <b> Search Entries:</b>
+    <b> 查询：</b>
     <form method="post" action="/search" onsubmit="return window.query(this);">
-      <input type="text" name="query" placeholder="Query" />&nbsp;
-      <input type="submit" value="Search" />&nbsp;
-      <a href="/">(View All)</a>
+      <input type="text" name="query" placeholder="关键字" />&nbsp;
+      <input type="submit" value="查询" />&nbsp;
+      <a href="/">查看全部</a>
     </form>
   </body>
 </html>
